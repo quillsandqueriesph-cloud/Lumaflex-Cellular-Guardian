@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumaflex: Cellular Guardian</title>
+    <title>LumaFlex: Cellular Guardian</title>
     <style>
         :root {
             --primary-red: #ff3b30;
             --nutrient-green: #34c759;
             --text-dark: #2c3e50;
             --ui-bg: rgba(255, 255, 255, 0.9);
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         * {
@@ -22,8 +22,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #0a0a0c;
-            color: #ffffff;
+            background: #0a0a0c; /* Changed background outside the game to black */
+            color: #ffffff;      /* Changed default page text to white to pop off black background */
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
@@ -39,7 +39,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 25px;
-            background: rgba(20, 20, 25, 0.85);
+            background: rgba(20, 20, 25, 0.85); /* Darkened dashboard background */
             backdrop-filter: blur(10px);
             border-radius: 0 0 16px 16px;
             box-shadow: var(--shadow);
@@ -111,14 +111,13 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 40px;
             text-align: center;
             z-index: 20;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
             color: var(--text-dark);
-            overflow-y: auto;
         }
 
         .modal.active {
@@ -130,7 +129,6 @@
             font-size: 2rem;
             margin-bottom: 12px;
             color: var(--text-dark);
-            flex-shrink: 0;
         }
 
         .modal p {
@@ -140,17 +138,15 @@
             margin-bottom: 20px;
             color: #5c6b73;
             text-align: left;
-            flex-shrink: 0;
         }
 
-        /* Branding Logo Layouts */
+        /* Branding Logo Layout - Increased size here */
         .brand-logo {
-            max-width: 240px;
+            max-width: 340px; /* Increased from 220px */
             width: 100%;
             height: auto;
-            margin-bottom: 15px;
+            margin-bottom: 25px;
             object-fit: contain;
-            flex-shrink: 0;
         }
 
         .btn {
@@ -166,9 +162,6 @@
             box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
             transition: transform 0.2s ease, background 0.2s ease;
             text-align: center;
-            flex-shrink: 0;
-            z-index: 25;
-            position: relative;
         }
 
         .btn:hover {
@@ -180,7 +173,7 @@
         #leaderboard-box {
             width: 100%;
             max-width: 900px;
-            background: #141419;
+            background: #141419; /* Darkened leaderboard background */
             margin-top: 25px;
             padding: 20px 25px;
             border-radius: 16px;
@@ -216,21 +209,6 @@
             margin-bottom: 15px;
             width: 250px;
             text-align: center;
-            flex-shrink: 0;
-        }
-
-        #score-input-zone {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-
-        #score-input-zone h4 {
-            color: var(--text-dark);
-            font-size: 1.1rem;
-            flex-shrink: 0;
         }
     </style>
 </head>
@@ -247,34 +225,35 @@
         <canvas id="gameCanvas" width="900" height="550"></canvas>
 
         <div class="modal active" id="modal-start" style="text-align: center;">
-            <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
+            <img class="brand-logo" src="./lumaflex-logo.png" alt="LumaFlex Logo Placeholder">
             <h2>Cellular Guardian</h2>
             <p style="text-align: center;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
             <span style="color: var(--nutrient-green); font-weight: bold;">CRITICAL WARNING:</span> Avoid green Nutrients! Zapping healthy items damages your cell tissue (-15% Health).</p>
-            <button class="btn" id="init-btn">Initialize LumaFlex</button>
+            <button class="btn" onclick="gameEngine.initGame()">Initialize LumaFlex</button>
         </div>
 
         <div class="modal" id="modal-bridge">
             <h2 id="bridge-title">Level Cleared</h2>
             <p id="bridge-text">Science Content</p>
-            <a href="#" target="_blank" class="btn" id="bridge-link">Advance Stream</a>
+            <a href="#" target="_blank" class="btn" id="bridge-link" onclick="gameEngine.nextLevel()">Advance Stream</a>
         </div>
 
         <div class="modal" id="modal-gameover" style="text-align: center;">
             <h2>Cellular Overload</h2>
             <p style="text-align: center;">Your mitochondria need a recharge. Stressors breached boundaries or vital system nutrients were destroyed.</p>
-            <button class="btn" id="restart-btn">Try Again</button>
+            <button class="btn" onclick="gameEngine.restartGame()">Try Again</button>
         </div>
 
         <div class="modal" id="modal-victory" style="text-align: center;">
-            <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
+            <img class="brand-logo" src="./lumaflex-logo.png" alt="LumaFlex Logo Placeholder">
             <h2>Total Cellular Wellness Achieved!</h2>
             <p style="text-align: center;">Master your recovery at home. Your speed, tactical accuracy, and precision metrics have peaked.</p>
             <div id="score-input-zone">
-                <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10">
-                <button class="btn" id="save-score-btn" style="margin-bottom: 20px; background:#2c3e50;">Save Score Rank</button>
+                <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10"><br>
+                <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
+                <br>
             </div>
-            <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop Lumaflex</a>
+            <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop LumaFlex (15% Off)</a>
         </div>
     </div>
 
@@ -285,7 +264,6 @@
     </div>
 
 <script>
-// Local SVG path handles mapped to repository files
 const SVGS = {
     skin: "cell-skin.svg",
     muscle: "cell-muscle.svg",
@@ -294,43 +272,39 @@ const SVGS = {
     women: "cell-women.svg"
 };
 
-// Config Object with Expanded Deep Copy
 const LUMAFLEX_LEVELS = [
     {
         level: 1, theme: "Skin Vitality", gradient: ["#FFFFFF", "#FDF2F2"], graphic: SVGS.skin,
         stressors: ["UV Radiation", "Pollution", "Blue Light", "Dehydration", "Cortisol", "UV Radiation", "Pollution", "Blue Light", "Dehydration", "Cortisol"],
         nutrients: ["Vitamin C", "Collagen", "Water Molecules"],
-        bridge: "Skin Revitalized! You've successfully shielded your dermal layers from accelerating degradation.\n\nTHE THREAT: Everyday exposure to UV Radiation and Pollution creates free radicals[.[...]
+        bridge: "Skin Revitalized! You’ve successfully shielded your dermal layers from accelerating degradation.\n\nTHE THREAT: Everyday exposure to UV Radiation and Pollution creates free radicals that break down collagen, while Blue Light from screens penetrates deeper than UVA rays, causing premature aging. When combined with systemic Dehydration and elevated Cortisol (the stress hormone), the skin barrier breaks down, causing inflammation and dullness.\n\nTHE LUMAFLEX SCIENCE: Medical-grade red light wavelengths penetrate deep into the dermis to stimulate cytochrome c oxidase within your mitochondria. This instantly boosts cellular energy production, neutralizing oxidative stress and accelerating the repair of skin tissue from the inside out.", link: "/blog/skin-health"
     },
     {
         level: 2, theme: "Muscle Recovery", gradient: ["#FFFFFF", "#FFF9F2"], graphic: SVGS.muscle,
         stressors: ["Lactic Acid", "Fatigue", "Micro-tears", "Inflammation", "Stiffness", "Oxidative Stress", "Muscle Soreness", "Energy Depletion", "Lactic Acid", "Inflammation"],
         nutrients: ["Amino Acids", "ATP Energy", "Proteins"],
-        bridge: "Muscle Recovery Sequence Complete! You cleared the metabolic blocks inhibiting your physical performance.\n\nTHE THREAT: Intense physical exertion causes a massive buildup of Lactic A[...]
+        bridge: "Muscle Recovery Sequence Complete! You cleared the metabolic blocks inhibiting your physical performance.\n\nTHE THREAT: Intense physical exertion causes a massive buildup of Lactic Acid and metabolic waste, leading to acute Fatigue and Stiffness. On a cellular level, microscopic Micro-tears trigger localized Inflammation and Muscle Soreness, resulting in deep Energy Depletion that stalls your progress.\n\nTHE LUMAFLEX SCIENCE: By delivering targeted photonic energy to compromised muscle fibers, LumaFlex dramatically increases ATP (cellular fuel) production and enhances microcirculation. This speeds up the removal of lactic acid, quenches oxidative stress, and repairs micro-tears up to 3x faster than passive rest alone.", link: "/blog/muscle-recovery"
     },
     {
         level: 3, theme: "Deep Sleep", gradient: ["#FFFFFF", "#F2F4F7"], graphic: SVGS.sleep,
-        stressors: ["Circadian Disruption", "Racing Thoughts", "Melatonin Suppression", "Anxiety", "Mental Fatigue", "Blue Light", "Cortisol Spikes", "Inflammatory Diet", "Cellular Inactivity", "Anxie[...]
+        stressors: ["Circadian Disruption", "Racing Thoughts", "Melatonin Suppression", "Anxiety", "Mental Fatigue", "Blue Light", "Cortisol Spikes", "Inflammatory Diet", "Cellular Inactivity", "Anxiety"],
         nutrients: ["Melatonin", "GABA", "REM Waves"],
-        bridge: "Circadian Rhythm Restored! You silenced the neurological disruptions keeping your body in a state of high alert.\n\nTHE THREAT: Circadian Disruption from irregular schedules and late-[...]
+        bridge: "Circadian Rhythm Restored! You silenced the neurological disruptions keeping your body in a state of high alert.\n\nTHE THREAT: Circadian Disruption from irregular schedules and late-night Blue Light exposure causes immediate Melatonin Suppression, tricking your brain into thinking it is daytime. This triggers Cortisol Spikes and Racing Thoughts, leading to Anxiety and Mental Fatigue. Combined with an Inflammatory Diet and Cellular Inactivity, your body completely loses its ability to enter deep, restorative sleep states.\n\nTHE LUMAFLEX SCIENCE: Red light therapy acts as a non-pharmacological 'circadian anchor.' By mimicking the natural light spectrum of sunset, it signals your nervous system to down-regulate, mitigating cortisol spikes and naturally stimulating your body's intrinsic melatonin production for deep, phase-4 sleep.", link: "/blog/sleep-quality"
     },
     {
         level: 4, theme: "Pet Wellness", gradient: ["#FFFFFF", "#FDFBF2"], graphic: SVGS.pet,
         stressors: ["Joint Stiffness", "Hip Discomfort", "Inflamed Paws", "Coat Dullness", "Exercise Fatigue", "Coat Dullness", "Post-play Soreness", "Ageing", "Minor Aches", "Joint Stiffness"],
         nutrients: ["Glucosamine", "Omega-3", "Vitamins"],
-        bridge: "Pack Vitality Restored! You've supported your pet's mobility and cellular health.\n\nTHE THREAT: Just like humans, aging pets suffer from Joint Stiffness, Hip Discomfort, and Infl[...[...]
+        bridge: "Pack Vitality Restored! You’ve supported your pet’s mobility and cellular health.\n\nTHE THREAT: Just like humans, aging pets suffer from Joint Stiffness, Hip Discomfort, and Inflamed Paws from daily activity. Environmental factors lead to Coat Dullness, while Post-play Soreness, Exercise Fatigue, and the natural progression of Ageing cause Minor Aches that reduce their quality of life and limit their playfulness.\n\nTHE LUMAFLEX SCIENCE: Pets respond exceptionally well to photobiomodulation. The deep-penetrating red light reaches stiff joints and inflamed muscle tissues non-invasively and drug-free, blocking inflammatory pathways, soothing nerve endings, and keeping your companion vibrant and active.", link: "/blog/pet-wellness"
     },
     {
-        level: 5, theme: "Women's Health", gradient: ["#FFFFFF", "#FDF2F5"], graphic: SVGS.women,
+        level: 5, theme: "Women’s Health", gradient: ["#FFFFFF", "#FDF2F5"], graphic: SVGS.women,
         stressors: ["Hormonal Flux", "Cramping", "Cyclical Fatigue", "Pelvic Tension", "Brain Fog", "Menstrual Cramping", "Water Retention", "Sleep Disruption", "Skin Sensitivity", "Inflammation"],
         nutrients: ["Magnesium", "Iron Cells", "Progesterone"],
-        bridge: "System Equilibrium Achieved! You've fortified your body to maintain balance through every cycle.\n\nTHE THREAT: Hormonal Flux triggers a cascade of physical challenges, including pa[.[...]
+        bridge: "System Equilibrium Achieved! You’ve fortified your body to maintain balance through every cycle.\n\nTHE THREAT: Hormonal Flux triggers a cascade of physical challenges, including painful Cramping, Menstrual Cramping, and deep Pelvic Tension. This systemic strain manifests as Cyclical Fatigue, severe Sleep Disruption, Insomnia, and Water Retention. On a cognitive level, it induces Brain Fog and heightened Skin Sensitivity, leaving the body vulnerable to chronic Inflammation.\n\nTHE LUMAFLEX SCIENCE: By energizing local cells, LumaFlex provides localized deep-tissue warmth and increases blood flow to smooth muscles, directly easing pelvic tension and cramps. On a systemic level, it provides your cells with the vital energy needed to balance physical transitions, clearing brain fog and stabilizing your recovery curves.", link: "/blog/womens-health"
     }
 ];
 
-/**
- * Audio Engine (Web Audio API Synthesizers)
- */
 class AudioEngine {
     constructor() {
         this.ctx = null;
@@ -356,9 +330,7 @@ class AudioEngine {
             this.humOsc.connect(this.humGain);
             this.humGain.connect(this.ctx.destination);
             this.humOsc.start();
-        } catch(e) {
-            console.warn("Audio initialization warning:", e);
-        }
+        } catch(e) {}
     }
 
     setHumActive(active) {
@@ -418,9 +390,6 @@ class AudioEngine {
 
 const sfx = new AudioEngine();
 
-/**
- * Game Core Engine Loop
- */
 class GameEngine {
     constructor() {
         this.canvas = document.getElementById('gameCanvas');
@@ -477,43 +446,11 @@ class GameEngine {
             e.target.innerText = sfx.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
             if(sfx.muted && sfx.humGain) sfx.setHumActive(false);
         });
-
-        // Initialize button handlers
-        document.getElementById('init-btn').addEventListener('click', () => {
-            this.initGame();
-        });
-
-        document.getElementById('restart-btn').addEventListener('click', () => {
-            this.restartGame();
-        });
-
-        document.getElementById('save-score-btn').addEventListener('click', () => {
-            this.submitScore();
-        });
-
-        document.getElementById('bridge-link').addEventListener('click', (e) => {
-            e.preventDefault();
-            if(this.currentLevelIdx === LUMAFLEX_LEVELS.length - 1) {
-                this.triggerUltimateVictory();
-            } else {
-                this.nextLevel();
-            }
-        });
     }
 
     initGame() {
-        console.log("Initializing game...");
-        try {
-            sfx.init();
-        } catch(e) {
-            console.error("Audio init error:", e);
-        }
-        
-        const modal = document.getElementById('modal-start');
-        if (modal) {
-            modal.classList.remove('active');
-        }
-        
+        sfx.init();
+        document.getElementById('modal-start').classList.remove('active');
         this.currentLevelIdx = 0;
         this.startTime = Date.now();
         this.totalClicks = 0;
@@ -642,50 +579,6 @@ class GameEngine {
         }
     }
 
-    /**
-     * Wraps text to fit within a circle by breaking it into lines
-     */
-    wrapTextInCircle(ctx, text, maxWidth, lineHeight) {
-        const words = text.split(' ');
-        const lines = [];
-        let currentLine = '';
-
-        for (let i = 0; i < words.length; i++) {
-            const testLine = currentLine + (currentLine ? ' ' : '') + words[i];
-            const metrics = ctx.measureText(testLine);
-            
-            if (metrics.width > maxWidth && currentLine) {
-                lines.push(currentLine);
-                currentLine = words[i];
-            } else {
-                currentLine = testLine;
-            }
-        }
-        if (currentLine) lines.push(currentLine);
-        
-        return lines;
-    }
-
-    /**
-     * Renders wrapped text centered in a circle
-     */
-    drawWrappedText(ctx, text, x, y, maxWidth, textColor, fontSize) {
-        ctx.fillStyle = textColor;
-        ctx.font = `600 ${fontSize}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        
-        const lineHeight = fontSize * 1.2;
-        const lines = this.wrapTextInCircle(ctx, text, maxWidth, lineHeight);
-        
-        const totalHeight = (lines.length - 1) * lineHeight;
-        const startY = y - totalHeight / 2;
-        
-        lines.forEach((line, idx) => {
-            ctx.fillText(line, x, startY + (idx * lineHeight));
-        });
-    }
-
     render() {
         const lvl = LUMAFLEX_LEVELS[this.currentLevelIdx];
         
@@ -695,7 +588,6 @@ class GameEngine {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Render stylized container box card for the image target
         const boxSize = (this.cell.r * 2) + 24; 
         const boxX = this.cell.x - (boxSize / 2);
         const boxY = this.cell.y - (boxSize / 2);
@@ -714,27 +606,22 @@ class GameEngine {
         this.ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
         this.ctx.closePath();
         
-        // Premium soft drop shadow for the box container
         this.ctx.shadowColor = "rgba(44, 62, 80, 0.08)";
         this.ctx.shadowBlur = 25;
         this.ctx.shadowOffsetY = 6;
         
-        // Solid clean white background fill matching image profiles
         this.ctx.fillStyle = "#FFFFFF";
         this.ctx.fill();
         
-        // Soft matching border lines
         this.ctx.restore();
         this.ctx.strokeStyle = "rgba(44, 62, 80, 0.06)";
         this.ctx.lineWidth = 2;
         this.ctx.stroke();
 
-        // Draw center custom SVG image inside its white frame box
         try {
             if (this.cell.img.complete && this.cell.img.naturalWidth !== 0) {
                 this.ctx.drawImage(this.cell.img, this.cell.x - this.cell.r, this.cell.y - this.cell.r, this.cell.r * 2, this.cell.r * 2);
             } else {
-                // Inline fallback if files are currently fetching
                 this.ctx.beginPath();
                 this.ctx.arc(this.cell.x, this.cell.y, this.cell.r, 0, Math.PI * 2);
                 this.ctx.fillStyle = "rgba(255, 59, 48, 0.05)";
@@ -758,11 +645,14 @@ class GameEngine {
             this.ctx.fill();
             this.ctx.stroke();
 
-            const textColor = e.isStressor ? "#4a5568" : "#1b4332";
-            const maxWidth = (e.r * 1.6);
-            const fontSize = Math.max(9, Math.floor(e.r * 0.5));
+            this.ctx.fillStyle = e.isStressor ? "#4a5568" : "#1b4332";
             
-            this.drawWrappedText(this.ctx, e.name, e.x, e.y, maxWidth, textColor, fontSize);
+            // Increased text scaling factor multiplier below to make bubbles much larger and clearer
+            let fontMetric = Math.max(13, Math.floor((e.r * 3.1) / e.name.length));
+            this.ctx.font = `700 ${fontMetric}px sans-serif`;
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.fillText(e.name, e.x, e.y);
         });
 
         this.particles.forEach(p => {
@@ -797,6 +687,19 @@ class GameEngine {
         document.getElementById('bridge-text').innerHTML = lvl.bridge.replace(/\n\n/g, '<br><br>');
         document.getElementById('bridge-link').href = lvl.link;
         
+        if(this.currentLevelIdx === LUMAFLEX_LEVELS.length - 1) {
+            document.getElementById('bridge-link').innerText = "Review Final Diagnostics";
+            document.getElementById('bridge-link').onclick = (e) => {
+                e.preventDefault();
+                this.triggerUltimateVictory();
+            };
+        } else {
+            document.getElementById('bridge-link').innerText = "Advance Stream Pipeline";
+            document.getElementById('bridge-link').onclick = (e) => {
+                e.preventDefault();
+                this.nextLevel();
+            };
+        }
         document.getElementById('modal-bridge').classList.add('active');
     }
 
@@ -849,9 +752,9 @@ class GameEngine {
     renderLeaderboard() {
         const listContainer = document.getElementById('leaderboard-list');
         const scores = JSON.parse(localStorage.getItem('lumaflex_scores')) || [
-            { name: "LumaflexWarrior", score: 1250 },
-            { name: "RedRanger", score: 980 },
-            { name: "LightBringer", score: 710 }
+            { name: "MitoMaster", score: 1250 },
+            { name: "LaserGuard", score: 980 },
+            { name: "CellShield", score: 710 }
         ];
 
         listContainer.innerHTML = scores.map((s, i) => `
