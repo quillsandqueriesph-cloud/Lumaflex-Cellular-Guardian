@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LumaFlex: Cellular Guardian</title>
+    <title>Lumaflex: Cellular Guardian</title>
     <style>
         :root {
             --primary-red: #ff3b30;
@@ -255,7 +255,7 @@
     </div>
 
 <script>
-// Clean, local SVG path placeholders for your files
+// Local SVG path handles mapped to repository files
 const SVGS = {
     skin: "cell-skin.svg",
     muscle: "cell-muscle.svg",
@@ -587,19 +587,50 @@ class GameEngine {
         this.ctx.fillStyle = gradient;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Try to draw center custom SVG file
+        // Render stylized container box card for the image target
+        const boxSize = (this.cell.r * 2) + 24; 
+        const boxX = this.cell.x - (boxSize / 2);
+        const boxY = this.cell.y - (boxSize / 2);
+        const radius = 24; 
+
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.moveTo(boxX + radius, boxY);
+        this.ctx.lineTo(boxX + boxSize - radius, boxY);
+        this.ctx.quadraticCurveTo(boxX + boxSize, boxY, boxX + boxSize, boxY + radius);
+        this.ctx.lineTo(boxX + boxSize, boxY + boxSize - radius);
+        this.ctx.quadraticCurveTo(boxX + boxSize, boxY + boxSize, boxX + boxSize - radius, boxY + boxSize);
+        this.ctx.lineTo(boxX + radius, boxY + boxSize);
+        this.ctx.quadraticCurveTo(boxX, boxY + boxSize, boxX, boxY + boxSize - radius);
+        this.ctx.lineTo(boxX, boxY + radius);
+        this.ctx.quadraticCurveTo(boxX, boxY, boxX + radius, boxY);
+        this.ctx.closePath();
+        
+        // Premium soft drop shadow for the box container
+        this.ctx.shadowColor = "rgba(44, 62, 80, 0.08)";
+        this.ctx.shadowBlur = 25;
+        this.ctx.shadowOffsetY = 6;
+        
+        // Solid clean white background fill matching image profiles
+        this.ctx.fillStyle = "#FFFFFF";
+        this.ctx.fill();
+        
+        // Soft matching border lines
+        this.ctx.restore();
+        this.ctx.strokeStyle = "rgba(44, 62, 80, 0.06)";
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+
+        // Draw center custom SVG image inside its white frame box
         try {
             if (this.cell.img.complete && this.cell.img.naturalWidth !== 0) {
                 this.ctx.drawImage(this.cell.img, this.cell.x - this.cell.r, this.cell.y - this.cell.r, this.cell.r * 2, this.cell.r * 2);
             } else {
-                // Fallback circle if image is still loading or broken locally
+                // Inline fallback if files are currently fetching
                 this.ctx.beginPath();
                 this.ctx.arc(this.cell.x, this.cell.y, this.cell.r, 0, Math.PI * 2);
-                this.ctx.fillStyle = "rgba(255, 59, 48, 0.1)";
-                this.ctx.strokeStyle = "var(--primary-red)";
-                this.ctx.lineWidth = 2;
+                this.ctx.fillStyle = "rgba(255, 59, 48, 0.05)";
                 this.ctx.fill();
-                this.ctx.stroke();
             }
         } catch(e) {}
 
@@ -724,9 +755,9 @@ class GameEngine {
     renderLeaderboard() {
         const listContainer = document.getElementById('leaderboard-list');
         const scores = JSON.parse(localStorage.getItem('lumaflex_scores')) || [
-            { name: "Peter", score: 1250 },
-            { name: "John", score: 980 },
-            { name: "Miki", score: 710 }
+            { name: "LumaflexWarrior", score: 1250 },
+            { name: "RedRanger", score: 980 },
+            { name: "LightBringer", score: 710 }
         ];
 
         listContainer.innerHTML = scores.map((s, i) => `
