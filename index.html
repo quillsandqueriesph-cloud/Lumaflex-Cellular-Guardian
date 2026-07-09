@@ -92,14 +92,14 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            z-index: 5;
+            z-index: 25; /* Pushed above layout layers */
             display: flex;
             align-items: center;
             gap: 5px;
             color: var(--text-dark);
         }
 
-        /* Modals & Overlays */
+        /* Modals & Overlays - Optimized to prevent content spilling */
         .modal {
             position: absolute;
             top: 0;
@@ -109,15 +109,16 @@
             background: rgba(255, 255, 255, 0.97);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: center; /* Centers elements perfectly vertically */
             align-items: center;
-            padding: 40px;
+            padding: 25px 40px;
             text-align: center;
             z-index: 20;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
             color: var(--text-dark);
+            overflow-y: auto; /* Fallback safe scrollbar if browser window scales down aggressively */
         }
 
         .modal.active {
@@ -126,25 +127,27 @@
         }
 
         .modal h2 {
-            font-size: 2rem;
-            margin-bottom: 12px;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
             color: var(--text-dark);
+            line-height: 1.2;
         }
 
         .modal p {
-            font-size: 1rem;
-            line-height: 1.5;
+            font-size: 0.95rem;
+            line-height: 1.4;
             max-width: 720px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             color: #5c6b73;
             text-align: left;
         }
 
+        /* Branding Logo Layout - Rescale bounds safely inside frame constraints */
         .brand-logo {
-            max-width: 340px; 
-            width: 100%;
+            max-width: 300px; 
+            width: 80%;
             height: auto;
-            margin-bottom: 25px;
+            margin-bottom: 12px;
             object-fit: contain;
         }
 
@@ -152,8 +155,8 @@
             background: var(--primary-red);
             color: white;
             border: none;
-            padding: 14px 32px;
-            font-size: 1rem;
+            padding: 12px 28px;
+            font-size: 0.95rem;
             font-weight: bold;
             border-radius: 30px;
             cursor: pointer;
@@ -205,7 +208,7 @@
             border: 2px solid #e2e8f0;
             border-radius: 8px;
             font-size: 1rem;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             width: 250px;
             text-align: center;
         }
@@ -226,9 +229,9 @@
         <div class="modal active" id="modal-start" style="text-align: center;">
             <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
             <h2>Cellular Guardian</h2>
-            <p style="text-align: center;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
+            <p style="text-align: center; margin-top: 5px;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
             <span style="color: var(--nutrient-green); font-weight: bold;">CRITICAL WARNING:</span> Avoid green Nutrients! Zapping healthy items damages your cell tissue (-15% Health).</p>
-            <button class="btn" onclick="gameEngine.initGame()">Initialize LumaFlex</button>
+            <button class="btn" onclick="gameEngine.initGame()">Initialize Lumaflex</button>
         </div>
 
         <div class="modal" id="modal-bridge">
@@ -249,10 +252,10 @@
             <p style="text-align: center;">Master your recovery at home. Your speed, tactical accuracy, and precision metrics have peaked.</p>
             <div id="score-input-zone">
                 <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10"><br>
-                <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
+                <button class="btn" style="margin-bottom: 16px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
                 <br>
             </div>
-            <div style="display: flex; gap: 15px; justify-content: center;">
+            <div style="display: flex; gap: 15px; justify-content: center; width: 100%;">
                 <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop Lumaflex</a>
                 <button class="btn" style="background: #5c6b73;" onclick="gameEngine.restartGameFromVictory()">Play Again</button>
             </div>
@@ -649,13 +652,11 @@ class GameEngine {
 
             this.ctx.fillStyle = e.isStressor ? "#4a5568" : "#1b4332";
             
-            // NEW: Split names into words and dynamically wrap them vertically into lines inside bubble boundaries
             let words = e.name.split(" ");
             let lines = [];
             let currentLine = words[0];
 
             for (let k = 1; k < words.length; k++) {
-                // If single string phrase is very long, force a split layout
                 if (currentLine.length + words[k].length > 9) {
                     lines.push(currentLine);
                     currentLine = words[k];
@@ -665,7 +666,6 @@ class GameEngine {
             }
             lines.push(currentLine);
 
-            // Dynamic safe font sizing calculations based on total lines rendered
             let fontSize = lines.length > 1 ? 13 : 15;
             this.ctx.font = `700 ${fontSize}px sans-serif`;
             this.ctx.textAlign = "center";
@@ -746,10 +746,9 @@ class GameEngine {
 
     restartGameFromVictory() {
         document.getElementById('modal-victory').classList.remove('active');
-        // Reset input fields cleanly
         document.getElementById('score-input-zone').innerHTML = `
             <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10"><br>
-            <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
+            <button class="btn" style="margin-bottom: 16px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
             <br>
         `;
         this.initGame();
@@ -787,7 +786,7 @@ class GameEngine {
     renderLeaderboard() {
         const listContainer = document.getElementById('leaderboard-list');
         const scores = JSON.parse(localStorage.getItem('lumaflex_scores')) || [
-            { name: "MitoMaster", score: 1250 },
+            { name: "RedLightMaster", score: 1250 },
             { name: "LaserGuard", score: 980 },
             { name: "CellShield", score: 710 }
         ];
