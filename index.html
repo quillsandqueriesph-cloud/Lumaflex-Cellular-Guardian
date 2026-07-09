@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LumaFlex: Cellular Guardian</title>
+    <style>
+        :root {
+            --primary-red: #ff3b30;
+            --nutrient-green: #34c759;
+            --text-dark: #2c3e50;
+            --ui-bg: rgba(255, 255, 255, 0.9);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f4f4f7;
+            color: var(--text-dark);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Top Bar Dashboard */
+        #dashboard {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: var(--ui-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 16px 16px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            margin-bottom: 20px;
+        }
+
+        .db-segment {
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        #health-display {
+            color: var(--primary-red);
+            transition: all 0.2s ease;
+        }
+
+        /* Game Frame Container */
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 550px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: #fff;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: none; 
+        }
+
+        /* UI Audio Control Overlay */
+        #audio-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: var(--ui-bg);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Modals & Overlays */
+        .modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.97);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal h2 {
+            font-size: 2rem;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+        }
+
+        .modal p {
+            font-size: 1rem;
+            line-height: 1.5;
+            max-width: 720px;
+            margin-bottom: 20px;
+            color: #5c6b73;
+            text-align: left;
+        }
+
+        /* Branding Logo Layouts */
+        .brand-logo {
+            max-width: 220px;
+            height: auto;
+            margin-bottom: 20px;
+            object-fit: contain;
+        }
+
+        .btn {
+            background: var(--primary-red);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
+            transition: transform 0.2s ease, background 0.2s ease;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            background: #e03226;
+        }
+
+        /* Leaderboard Styling */
+        #leaderboard-box {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            margin-top: 25px;
+            padding: 20px 25px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+        }
+
+        #leaderboard-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #f4f4f7;
+            padding-bottom: 8px;
+        }
+
+        .lb-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f9f9fb;
+            font-size: 0.95rem;
+        }
+        
+        .lb-row:last-child { border: none; }
+
+        input[type="text"] {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            width: 250px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="dashboard">
+        <div class="db-segment" id="level-name">Level 1: Skin Vitality</div>
+        <div class="db-segment">Health: <span id="health-display">100%</span></div>
+        <div class="db-segment">Neutralized: <span id="neutralized-display">0/10</span></div>
+    </div>
+
+    <div id="game-container">
+        <button id="audio-toggle">🔊 Sound: On</button>
+        <canvas id="gameCanvas" width="900" height="550"></canvas>
+
+        <div class="modal active" id="modal-start" style="text-align: center;">
+            <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
+            <h2>Cellular Guardian</h2>
+            <p style="text-align: center;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
+            <span style="color: var(--nutrient-green); font-weight: bold;">CRITICAL WARNING:</span> Avoid green Nutrients! Zapping healthy items damages your cell tissue (-15% Health).</p>
+            <button class="btn" onclick="gameEngine.initGame()">Initialize LumaFlex</button>
+        </div>
+
+        <div class="modal" id="modal-bridge">
+            <h2 id="bridge-title">Level Cleared</h2>
+            <p id="bridge-text">Science Content</p>
+            <a href="#" target="_blank" class="btn" id="bridge-link" onclick="gameEngine.nextLevel()">Advance Stream</a>
+        </div>
+
+        <div class="modal" id="modal-gameover" style="text-align: center;">
+            <h2>Cellular Overload</h2>
+            <p style="text-align: center;">Your mitochondria need a recharge. Stressors breached boundaries or vital system nutrients were destroyed.</p>
+            <button class="btn" onclick="gameEngine.restartGame()">Try Again</button>
+        </div>
+
+        <div class="modal" id="modal-victory" style="text-align: center;">
+            <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
+            <h2>Total Cellular Wellness Achieved!</h2>
+            <p style="text-align: center;">Master your recovery at home. Your speed, tactical accuracy, and precision metrics have peaked.</p>
+            <div id="score-input-zone">
+                <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10"><br>
+                <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
+                <br>
+            </div>
+            <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop LumaFlex (15% Off)</a>
+        </div>
+    </div>
+
+    <div id="leaderboard-box">
+        <h3>Top 5 Cellular Guardians</h3>
+        <div id="leaderboard-list">
+            </div>
+    </div>
+
+<script>
+// Clean, local SVG path placeholders for your files
+const SVGS = {
+    skin: "cell-skin.svg",
+    muscle: "cell-muscle.svg",
+    sleep: "cell-sleep.svg",
+    pet: "cell-pet.svg",
+    women: "cell-women.svg"
+};
+
+// Config Object with Expanded Deep Copy
+const LUMAFLEX_LEVELS = [
+    {
+        level: 1, theme: "Skin Vitality", gradient: ["#FFFFFF", "#FDF2F2"], graphic: SVGS.skin,
+        stressors: ["UV Radiation", "Pollution", "Blue Light", "Dehydration", "Cortisol", "UV Radiation", "Pollution", "Blue Light", "Dehydration", "Cortisol"],
+        nutrients: ["Vitamin C", "Collagen", "Water Molecules"],
+        bridge: "Skin Revitalized! You’ve successfully shielded your dermal layers from accelerating degradation.\n\nTHE THREAT: Everyday exposure to UV Radiation and Pollution creates free radicals that break down collagen, while Blue Light from screens penetrates deeper than UVA rays, causing premature aging. When combined with systemic Dehydration and elevated Cortisol (the stress hormone), the skin barrier breaks down, causing inflammation and dullness.\n\nTHE LUMAFLEX SCIENCE: Medical-grade red light wavelengths penetrate deep into the dermis to stimulate cytochrome c oxidase within your mitochondria. This instantly boosts cellular energy production, neutralizing oxidative stress and accelerating the repair of skin tissue from the inside out.", link: "/blog/skin-health"
+    },
+    {
+        level: 2, theme: "Muscle Recovery", gradient: ["#FFFFFF", "#FFF9F2"], graphic: SVGS.muscle,
+        stressors: ["Lactic Acid", "Fatigue", "Micro-tears", "Inflammation", "Stiffness", "Oxidative Stress", "Muscle Soreness", "Energy Depletion", "Lactic Acid", "Inflammation"],
+        nutrients: ["Amino Acids", "ATP Energy", "Proteins"],
+        bridge: "Muscle Recovery Sequence Complete! You cleared the metabolic blocks inhibiting your physical performance.\n\nTHE THREAT: Intense physical exertion causes a massive buildup of Lactic Acid and metabolic waste, leading to acute Fatigue and Stiffness. On a cellular level, microscopic Micro-tears trigger localized Inflammation and Muscle Soreness, resulting in deep Energy Depletion that stalls your progress.\n\nTHE LUMAFLEX SCIENCE: By delivering targeted photonic energy to compromised muscle fibers, LumaFlex dramatically increases ATP (cellular fuel) production and enhances microcirculation. This speeds up the removal of lactic acid, quenches oxidative stress, and repairs micro-tears up to 3x faster than passive rest alone.", link: "/blog/muscle-recovery"
+    },
+    {
+        level: 3, theme: "Deep Sleep", gradient: ["#FFFFFF", "#F2F4F7"], graphic: SVGS.sleep,
+        stressors: ["Circadian Disruption", "Racing Thoughts", "Melatonin Suppression", "Anxiety", "Mental Fatigue", "Blue Light", "Cortisol Spikes", "Inflammatory Diet", "Cellular Inactivity", "Anxiety"],
+        nutrients: ["Melatonin", "GABA", "REM Waves"],
+        bridge: "Circadian Rhythm Restored! You silenced the neurological disruptions keeping your body in a state of high alert.\n\nTHE THREAT: Circadian Disruption from irregular schedules and late-night Blue Light exposure causes immediate Melatonin Suppression, tricking your brain into thinking it is daytime. This triggers Cortisol Spikes and Racing Thoughts, leading to Anxiety and Mental Fatigue. Combined with an Inflammatory Diet and Cellular Inactivity, your body completely loses its ability to enter deep, restorative sleep states.\n\nTHE LUMAFLEX SCIENCE: Red light therapy acts as a non-pharmacological 'circadian anchor.' By mimicking the natural light spectrum of sunset, it signals your nervous system to down-regulate, mitigating cortisol spikes and naturally stimulating your body's intrinsic melatonin production for deep, phase-4 sleep.", link: "/blog/sleep-quality"
+    },
+    {
+        level: 4, theme: "Pet Wellness", gradient: ["#FFFFFF", "#FDFBF2"], graphic: SVGS.pet,
+        stressors: ["Joint Stiffness", "Hip Discomfort", "Inflamed Paws", "Coat Dullness", "Exercise Fatigue", "Coat Dullness", "Post-play Soreness", "Ageing", "Minor Aches", "Joint Stiffness"],
+        nutrients: ["Glucosamine", "Omega-3", "Vitamins"],
+        bridge: "Pack Vitality Restored! You’ve supported your pet’s mobility and cellular health.\n\nTHE THREAT: Just like humans, aging pets suffer from Joint Stiffness, Hip Discomfort, and Inflamed Paws from daily activity. Environmental factors lead to Coat Dullness, while Post-play Soreness, Exercise Fatigue, and the natural progression of Ageing cause Minor Aches that reduce their quality of life and limit their playfulness.\n\nTHE LUMAFLEX SCIENCE: Pets respond exceptionally well to photobiomodulation. The deep-penetrating red light reaches stiff joints and inflamed muscle tissues non-invasively and drug-free, blocking inflammatory pathways, soothing nerve endings, and keeping your companion vibrant and active.", link: "/blog/pet-wellness"
+    },
+    {
+        level: 5, theme: "Women’s Health", gradient: ["#FFFFFF", "#FDF2F5"], graphic: SVGS.women,
+        stressors: ["Hormonal Flux", "Cramping", "Cyclical Fatigue", "Pelvic Tension", "Brain Fog", "Menstrual Cramping", "Water Retention", "Sleep Disruption", "Skin Sensitivity", "Inflammation"],
+        nutrients: ["Magnesium", "Iron Cells", "Progesterone"],
+        bridge: "System Equilibrium Achieved! You’ve fortified your body to maintain balance through every cycle.\n\nTHE THREAT: Hormonal Flux triggers a cascade of physical challenges, including painful Cramping, Menstrual Cramping, and deep Pelvic Tension. This systemic strain manifests as Cyclical Fatigue, severe Sleep Disruption, Insomnia, and Water Retention. On a cognitive level, it induces Brain Fog and heightened Skin Sensitivity, leaving the body vulnerable to chronic Inflammation.\n\nTHE LUMAFLEX SCIENCE: By energizing local cells, LumaFlex provides localized deep-tissue warmth and increases blood flow to smooth muscles, directly easing pelvic tension and cramps. On a systemic level, it provides your cells with the vital energy needed to balance physical transitions, clearing brain fog and stabilizing your recovery curves.", link: "/blog/womens-health"
+    }
+];
+
+/**
+ * Audio Engine (Web Audio API Synthesizers)
+ */
+class AudioEngine {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.humOsc = null;
+        this.humGain = null;
+    }
+
+    init() {
+        if (this.ctx) return;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.startHum();
+    }
+
+    startHum() {
+        if (this.muted || !this.ctx) return;
+        try {
+            this.humOsc = this.ctx.createOscillator();
+            this.humGain = this.ctx.createGain();
+            this.humOsc.type = 'sine';
+            this.humOsc.frequency.setValueAtTime(65.41, this.ctx.currentTime);
+            this.humGain.gain.setValueAtTime(0, this.ctx.currentTime);
+            this.humOsc.connect(this.humGain);
+            this.humGain.connect(this.ctx.destination);
+            this.humOsc.start();
+        } catch(e) {}
+    }
+
+    setHumActive(active) {
+        if (this.muted || !this.humGain || !this.ctx) return;
+        this.humGain.gain.linearRampToValueAtTime(active ? 0.15 : 0, this.ctx.currentTime + 0.1);
+    }
+
+    playZap() {
+        if (this.muted || !this.ctx) return;
+        let now = this.ctx.currentTime;
+        [850, 1400].forEach((freq, i) => {
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now + (i * 0.01));
+            osc.frequency.exponentialRampToValueAtTime(80, now + (i * 0.01) + 0.08);
+            gain.gain.setValueAtTime(0.25, now + (i * 0.01));
+            gain.gain.linearRampToValueAtTime(0, now + (i * 0.01) + 0.08);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + (i * 0.01));
+            osc.stop(now + (i * 0.01) + 0.09);
+        });
+    }
+
+    playThud() {
+        if (this.muted || !this.ctx) return;
+        let osc = this.ctx.createOscillator();
+        let gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(110, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.21);
+    }
+
+    playVictory() {
+        if (this.muted || !this.ctx) return;
+        const notes = [261.63, 329.63, 392.00, 523.25];
+        notes.forEach((freq, index) => {
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + (index * 0.1));
+            gain.gain.setValueAtTime(0.2, this.ctx.currentTime + (index * 0.1));
+            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + (index * 0.1) + 0.4);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + (index * 0.1));
+            osc.stop(this.ctx.currentTime + (index * 0.1) + 0.45);
+        });
+    }
+}
+
+const sfx = new AudioEngine();
+
+/**
+ * Game Core Engine Loop
+ */
+class GameEngine {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.currentLevelIdx = 0;
+        this.health = 100;
+        this.neutralizedCount = 0;
+        
+        this.entities = []; 
+        this.particles = [];
+        this.mouse = { x: -1000, y: -1000, active: false };
+        this.cell = { x: 450, y: 275, r: 65, img: new Image() };
+        
+        this.isRunning = false;
+        this.spawnTimer = 0;
+        this.stressorsSpawned = 0;
+        
+        this.startTime = 0;
+        this.totalClicks = 0;
+        this.precisionHits = 0;
+
+        this.initListeners();
+        this.renderLeaderboard();
+    }
+
+    initListeners() {
+        this.canvas.addEventListener('mousemove', (e) => {
+            const rect = this.canvas.getBoundingClientRect();
+            this.mouse.x = e.clientX - rect.left;
+            this.mouse.y = e.clientY - rect.top;
+            if(!this.mouse.active && this.isRunning) {
+                this.mouse.active = true;
+                sfx.setHumActive(true);
+            }
+            if(this.isRunning) {
+                this.particles.push({
+                    x: this.mouse.x, y: this.mouse.y,
+                    r: Math.random() * 4 + 2, alpha: 1.0, life: 500
+                });
+            }
+        });
+
+        this.canvas.addEventListener('mouseleave', () => {
+            this.mouse.active = false;
+            sfx.setHumActive(false);
+        });
+
+        this.canvas.addEventListener('mousedown', () => {
+            if(this.isRunning) this.totalClicks++;
+        });
+
+        document.getElementById('audio-toggle').addEventListener('click', (e) => {
+            sfx.muted = !sfx.muted;
+            e.target.innerText = sfx.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
+            if(sfx.muted && sfx.humGain) sfx.setHumActive(false);
+        });
+    }
+
+    initGame() {
+        sfx.init();
+        document.getElementById('modal-start').classList.remove('active');
+        this.currentLevelIdx = 0;
+        this.startTime = Date.now();
+        this.totalClicks = 0;
+        this.precisionHits = 0;
+        this.loadLevel(this.currentLevelIdx);
+    }
+
+    loadLevel(idx) {
+        const lvl = LUMAFLEX_LEVELS[idx];
+        document.getElementById('level-name').innerText = `Level ${lvl.level}: ${lvl.theme}`;
+        this.health = 100;
+        this.neutralizedCount = 0;
+        this.stressorsSpawned = 0;
+        this.entities = [];
+        this.cell.img.src = lvl.graphic;
+        
+        document.getElementById('health-display').innerText = "100%";
+        document.getElementById('neutralized-display').innerText = "0/10";
+        
+        this.isRunning = true;
+        this.gameLoop();
+    }
+
+    spawnEntity() {
+        const lvl = LUMAFLEX_LEVELS[this.currentLevelIdx];
+        
+        let x, y;
+        if(Math.random() > 0.5) {
+            x = Math.random() > 0.5 ? -30 : this.canvas.width + 30;
+            y = Math.random() * this.canvas.height;
+        } else {
+            x = Math.random() * this.canvas.width;
+            y = Math.random() > 0.5 ? -30 : this.canvas.height + 30;
+        }
+
+        const angle = Math.atan2(this.cell.y - y, this.cell.x - x);
+        const speedMultiplier = 1 + (this.currentLevelIdx * 0.25);
+        const velocity = (1.0 + Math.random() * 1.2) * speedMultiplier;
+
+        let isStressor = true;
+        let name = "";
+
+        if (this.stressorsSpawned >= 10 || (Math.random() < 0.3 && this.stressorsSpawned < 10)) {
+            isStressor = false;
+            name = lvl.nutrients[Math.floor(Math.random() * lvl.nutrients.length)];
+        } else {
+            name = lvl.stressors[this.stressorsSpawned];
+            this.stressorsSpawned++;
+        }
+
+        this.entities.push({
+            x: x, y: y,
+            vx: Math.cos(angle) * velocity,
+            vy: Math.sin(angle) * velocity,
+            name: name,
+            isStressor: isStressor,
+            r: 38
+        });
+    }
+
+    gameLoop() {
+        if (!this.isRunning) return;
+        this.update();
+        this.render();
+        requestAnimationFrame(() => this.gameLoop());
+    }
+
+    update() {
+        let cellIsUnderAttack = false;
+
+        this.spawnTimer++;
+        if(this.spawnTimer > 70) {
+            this.spawnEntity();
+            this.spawnTimer = 0;
+        }
+
+        for(let i = this.entities.length - 1; i >= 0; i--) {
+            let e = this.entities[i];
+            e.x += e.vx;
+            e.y += e.vy;
+
+            let distToCursor = Math.hypot(this.mouse.x - e.x, this.mouse.y - e.y);
+            if(this.mouse.active && distToCursor < e.r + 5) {
+                if (e.isStressor) {
+                    sfx.playZap(); 
+                    this.precisionHits++;
+                    this.neutralizedCount++;
+                    document.getElementById('neutralized-display').innerText = `${this.neutralizedCount}/10`;
+                    
+                    this.entities.splice(i, 1);
+                    if(this.neutralizedCount >= 10) this.triggerLevelClear();
+                } else {
+                    sfx.playThud();
+                    this.health -= 15; 
+                    this.entities.splice(i, 1);
+                    if(this.health <= 0) this.triggerGameOver();
+                }
+                continue;
+            }
+
+            let distToCell = Math.hypot(this.cell.x - e.x, this.cell.y - e.y);
+            if(distToCell < this.cell.r + e.r - 10) {
+                if (e.isStressor) {
+                    cellIsUnderAttack = true;
+                    this.health -= 0.4;
+                    if(Math.random() > 0.85) sfx.playThud();
+                    if(this.health <= 0) this.triggerGameOver();
+                } else {
+                    this.entities.splice(i, 1);
+                }
+            }
+        }
+
+        if(!cellIsUnderAttack && this.health < 100 && this.health > 0) {
+            this.health += (0.5 / 60);
+            if(this.health > 100) this.health = 100;
+        }
+
+        document.getElementById('health-display').innerText = `${Math.max(0, Math.floor(this.health))}%`;
+
+        for(let i = this.particles.length - 1; i >= 0; i--) {
+            let p = this.particles[i];
+            p.life -= 16.66;
+            p.alpha = p.life / 500;
+            if(p.life <= 0) this.particles.splice(i, 1);
+        }
+    }
+
+    render() {
+        const lvl = LUMAFLEX_LEVELS[this.currentLevelIdx];
+        
+        let gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+        gradient.addColorStop(0, lvl.gradient[0]);
+        gradient.addColorStop(1, lvl.gradient[1]);
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Try to draw center custom SVG file
+        try {
+            if (this.cell.img.complete && this.cell.img.naturalWidth !== 0) {
+                this.ctx.drawImage(this.cell.img, this.cell.x - this.cell.r, this.cell.y - this.cell.r, this.cell.r * 2, this.cell.r * 2);
+            } else {
+                // Fallback circle if image is still loading or broken locally
+                this.ctx.beginPath();
+                this.ctx.arc(this.cell.x, this.cell.y, this.cell.r, 0, Math.PI * 2);
+                this.ctx.fillStyle = "rgba(255, 59, 48, 0.1)";
+                this.ctx.strokeStyle = "var(--primary-red)";
+                this.ctx.lineWidth = 2;
+                this.ctx.fill();
+                this.ctx.stroke();
+            }
+        } catch(e) {}
+
+        this.entities.forEach(e => {
+            this.ctx.beginPath();
+            this.ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+            
+            if(e.isStressor) {
+                this.ctx.fillStyle = "rgba(240, 242, 245, 0.95)"; 
+                this.ctx.strokeStyle = "#cbd5e1";
+            } else {
+                this.ctx.fillStyle = "rgba(232, 245, 233, 0.95)"; 
+                this.ctx.strokeStyle = "var(--nutrient-green)";
+            }
+            
+            this.ctx.lineWidth = 2;
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            this.ctx.fillStyle = e.isStressor ? "#4a5568" : "#1b4332";
+            let fontMetric = Math.max(10, Math.floor((e.r * 2.3) / e.name.length));
+            this.ctx.font = `600 ${fontMetric}px sans-serif`;
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.fillText(e.name, e.x, e.y);
+        });
+
+        this.particles.forEach(p => {
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            this.ctx.fillStyle = `rgba(255, 59, 48, ${p.alpha})`;
+            this.ctx.fill();
+        });
+
+        if (this.mouse.active) {
+            this.ctx.beginPath();
+            this.ctx.arc(this.mouse.x, this.mouse.y, 6, 0, Math.PI * 2);
+            this.ctx.fillStyle = "var(--primary-red)";
+            this.ctx.fill();
+            
+            this.ctx.beginPath();
+            this.ctx.arc(this.mouse.x, this.mouse.y, 16, 0, Math.PI * 2);
+            this.ctx.strokeStyle = "rgba(255, 59, 48, 0.4)";
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+        }
+    }
+
+    triggerLevelClear() {
+        this.isRunning = false;
+        sfx.setHumActive(false);
+        sfx.playVictory();
+
+        const lvl = LUMAFLEX_LEVELS[this.currentLevelIdx];
+        document.getElementById('bridge-title').innerText = `Level ${lvl.level} Complete`;
+        
+        document.getElementById('bridge-text').innerHTML = lvl.bridge.replace(/\n\n/g, '<br><br>');
+        document.getElementById('bridge-link').href = lvl.link;
+        
+        if(this.currentLevelIdx === LUMAFLEX_LEVELS.length - 1) {
+            document.getElementById('bridge-link').innerText = "Review Final Diagnostics";
+            document.getElementById('bridge-link').onclick = (e) => {
+                e.preventDefault();
+                this.triggerUltimateVictory();
+            };
+        } else {
+            document.getElementById('bridge-link').innerText = "Advance Stream Pipeline";
+            document.getElementById('bridge-link').onclick = (e) => {
+                e.preventDefault();
+                this.nextLevel();
+            };
+        }
+        document.getElementById('modal-bridge').classList.add('active');
+    }
+
+    nextLevel() {
+        document.getElementById('modal-bridge').classList.remove('active');
+        this.currentLevelIdx++;
+        this.loadLevel(this.currentLevelIdx);
+    }
+
+    triggerGameOver() {
+        this.isRunning = false;
+        sfx.setHumActive(false);
+        document.getElementById('modal-gameover').classList.add('active');
+    }
+
+    restartGame() {
+        document.getElementById('modal-gameover').classList.remove('active');
+        this.initGame();
+    }
+
+    triggerUltimateVictory() {
+        document.getElementById('modal-bridge').classList.remove('active');
+        document.getElementById('modal-victory').classList.add('active');
+    }
+
+    calculateFinalScore() {
+        const timeSpentSec = Math.floor((Date.now() - this.startTime) / 1000);
+        const healthBonus = Math.floor(this.health * 100);
+        const accuracyPct = this.totalClicks > 0 ? (this.precisionHits / this.totalClicks) : 1;
+        const precisionBonus = Math.floor(accuracyPct * 500);
+
+        return Math.max(100, (healthBonus + precisionBonus) - (timeSpentSec * 2));
+    }
+
+    submitScore() {
+        const nameInput = document.getElementById('player-name').value.trim() || "ANON";
+        const finalScore = this.calculateFinalScore();
+        
+        let scores = JSON.parse(localStorage.getItem('lumaflex_scores')) || [];
+        scores.push({ name: nameInput, score: finalScore });
+        scores.sort((a, b) => b.score - a.score);
+        scores = scores.slice(0, 5);
+        
+        localStorage.setItem('lumaflex_scores', JSON.stringify(scores));
+        this.renderLeaderboard();
+        
+        document.getElementById('score-input-zone').innerHTML = `<h4>Score Saved! Rank Score: <strong>${finalScore}</strong></h4>`;
+    }
+
+    renderLeaderboard() {
+        const listContainer = document.getElementById('leaderboard-list');
+        const scores = JSON.parse(localStorage.getItem('lumaflex_scores')) || [
+            { name: "Peter", score: 1250 },
+            { name: "John", score: 980 },
+            { name: "Miki", score: 710 }
+        ];
+
+        listContainer.innerHTML = scores.map((s, i) => `
+            <div class="lb-row">
+                <span><strong>#${i+1}</strong> ${s.name}</span>
+                <span>${s.score} pts</span>
+            </div>
+        `).join('');
+    }
+}
+
+const gameEngine = new GameEngine();
+</script>
+</body>
+</html>
