@@ -167,6 +167,8 @@
             transition: transform 0.2s ease, background 0.2s ease;
             text-align: center;
             flex-shrink: 0;
+            z-index: 25;
+            position: relative;
         }
 
         .btn:hover {
@@ -249,19 +251,19 @@
             <h2>Cellular Guardian</h2>
             <p style="text-align: center;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
             <span style="color: var(--nutrient-green); font-weight: bold;">CRITICAL WARNING:</span> Avoid green Nutrients! Zapping healthy items damages your cell tissue (-15% Health).</p>
-            <button class="btn" onclick="gameEngine.initGame()">Initialize LumaFlex</button>
+            <button class="btn" id="init-btn">Initialize LumaFlex</button>
         </div>
 
         <div class="modal" id="modal-bridge">
             <h2 id="bridge-title">Level Cleared</h2>
             <p id="bridge-text">Science Content</p>
-            <a href="#" target="_blank" class="btn" id="bridge-link" onclick="gameEngine.nextLevel()">Advance Stream</a>
+            <a href="#" target="_blank" class="btn" id="bridge-link">Advance Stream</a>
         </div>
 
         <div class="modal" id="modal-gameover" style="text-align: center;">
             <h2>Cellular Overload</h2>
             <p style="text-align: center;">Your mitochondria need a recharge. Stressors breached boundaries or vital system nutrients were destroyed.</p>
-            <button class="btn" onclick="gameEngine.restartGame()">Try Again</button>
+            <button class="btn" id="restart-btn">Try Again</button>
         </div>
 
         <div class="modal" id="modal-victory" style="text-align: center;">
@@ -270,7 +272,7 @@
             <p style="text-align: center;">Master your recovery at home. Your speed, tactical accuracy, and precision metrics have peaked.</p>
             <div id="score-input-zone">
                 <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10">
-                <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
+                <button class="btn" id="save-score-btn" style="margin-bottom: 20px; background:#2c3e50;">Save Score Rank</button>
             </div>
             <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop Lumaflex</a>
         </div>
@@ -298,7 +300,7 @@ const LUMAFLEX_LEVELS = [
         level: 1, theme: "Skin Vitality", gradient: ["#FFFFFF", "#FDF2F2"], graphic: SVGS.skin,
         stressors: ["UV Radiation", "Pollution", "Blue Light", "Dehydration", "Cortisol", "UV Radiation", "Pollution", "Blue Light", "Dehydration", "Cortisol"],
         nutrients: ["Vitamin C", "Collagen", "Water Molecules"],
-        bridge: "Skin Revitalized! You've successfully shielded your dermal layers from accelerating degradation.\n\nTHE THREAT: Everyday exposure to UV Radiation and Pollution creates free radicals[...]
+        bridge: "Skin Revitalized! You've successfully shielded your dermal layers from accelerating degradation.\n\nTHE THREAT: Everyday exposure to UV Radiation and Pollution creates free radicals[.[...]
     },
     {
         level: 2, theme: "Muscle Recovery", gradient: ["#FFFFFF", "#FFF9F2"], graphic: SVGS.muscle,
@@ -316,13 +318,13 @@ const LUMAFLEX_LEVELS = [
         level: 4, theme: "Pet Wellness", gradient: ["#FFFFFF", "#FDFBF2"], graphic: SVGS.pet,
         stressors: ["Joint Stiffness", "Hip Discomfort", "Inflamed Paws", "Coat Dullness", "Exercise Fatigue", "Coat Dullness", "Post-play Soreness", "Ageing", "Minor Aches", "Joint Stiffness"],
         nutrients: ["Glucosamine", "Omega-3", "Vitamins"],
-        bridge: "Pack Vitality Restored! You've supported your pet's mobility and cellular health.\n\nTHE THREAT: Just like humans, aging pets suffer from Joint Stiffness, Hip Discomfort, and Infl[...]
+        bridge: "Pack Vitality Restored! You've supported your pet's mobility and cellular health.\n\nTHE THREAT: Just like humans, aging pets suffer from Joint Stiffness, Hip Discomfort, and Infl[...[...]
     },
     {
         level: 5, theme: "Women's Health", gradient: ["#FFFFFF", "#FDF2F5"], graphic: SVGS.women,
         stressors: ["Hormonal Flux", "Cramping", "Cyclical Fatigue", "Pelvic Tension", "Brain Fog", "Menstrual Cramping", "Water Retention", "Sleep Disruption", "Skin Sensitivity", "Inflammation"],
         nutrients: ["Magnesium", "Iron Cells", "Progesterone"],
-        bridge: "System Equilibrium Achieved! You've fortified your body to maintain balance through every cycle.\n\nTHE THREAT: Hormonal Flux triggers a cascade of physical challenges, including pa[...]
+        bridge: "System Equilibrium Achieved! You've fortified your body to maintain balance through every cycle.\n\nTHE THREAT: Hormonal Flux triggers a cascade of physical challenges, including pa[.[...]
     }
 ];
 
@@ -354,7 +356,9 @@ class AudioEngine {
             this.humOsc.connect(this.humGain);
             this.humGain.connect(this.ctx.destination);
             this.humOsc.start();
-        } catch(e) {}
+        } catch(e) {
+            console.warn("Audio initialization warning:", e);
+        }
     }
 
     setHumActive(active) {
@@ -473,11 +477,43 @@ class GameEngine {
             e.target.innerText = sfx.muted ? "🔇 Sound: Off" : "🔊 Sound: On";
             if(sfx.muted && sfx.humGain) sfx.setHumActive(false);
         });
+
+        // Initialize button handlers
+        document.getElementById('init-btn').addEventListener('click', () => {
+            this.initGame();
+        });
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            this.restartGame();
+        });
+
+        document.getElementById('save-score-btn').addEventListener('click', () => {
+            this.submitScore();
+        });
+
+        document.getElementById('bridge-link').addEventListener('click', (e) => {
+            e.preventDefault();
+            if(this.currentLevelIdx === LUMAFLEX_LEVELS.length - 1) {
+                this.triggerUltimateVictory();
+            } else {
+                this.nextLevel();
+            }
+        });
     }
 
     initGame() {
-        sfx.init();
-        document.getElementById('modal-start').classList.remove('active');
+        console.log("Initializing game...");
+        try {
+            sfx.init();
+        } catch(e) {
+            console.error("Audio init error:", e);
+        }
+        
+        const modal = document.getElementById('modal-start');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+        
         this.currentLevelIdx = 0;
         this.startTime = Date.now();
         this.totalClicks = 0;
@@ -761,19 +797,6 @@ class GameEngine {
         document.getElementById('bridge-text').innerHTML = lvl.bridge.replace(/\n\n/g, '<br><br>');
         document.getElementById('bridge-link').href = lvl.link;
         
-        if(this.currentLevelIdx === LUMAFLEX_LEVELS.length - 1) {
-            document.getElementById('bridge-link').innerText = "Review Final Diagnostics";
-            document.getElementById('bridge-link').onclick = (e) => {
-                e.preventDefault();
-                this.triggerUltimateVictory();
-            };
-        } else {
-            document.getElementById('bridge-link').innerText = "Advance Stream Pipeline";
-            document.getElementById('bridge-link').onclick = (e) => {
-                e.preventDefault();
-                this.nextLevel();
-            };
-        }
         document.getElementById('modal-bridge').classList.add('active');
     }
 
