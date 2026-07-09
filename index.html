@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LumaFlex: Cellular Guardian</title>
+    <title>Lumaflex: Cellular Guardian</title>
     <style>
         :root {
             --primary-red: #ff3b30;
@@ -22,8 +22,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #0a0a0c; /* Changed background outside the game to black */
-            color: #ffffff;      /* Changed default page text to white to pop off black background */
+            background: #0a0a0c; 
+            color: #ffffff;      
             overflow-x: hidden;
             display: flex;
             flex-direction: column;
@@ -39,7 +39,7 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px 25px;
-            background: rgba(20, 20, 25, 0.85); /* Darkened dashboard background */
+            background: rgba(20, 20, 25, 0.85); 
             backdrop-filter: blur(10px);
             border-radius: 0 0 16px 16px;
             box-shadow: var(--shadow);
@@ -140,9 +140,8 @@
             text-align: left;
         }
 
-        /* Branding Logo Layout - Increased size here */
         .brand-logo {
-            max-width: 340px; /* Increased from 220px */
+            max-width: 340px; 
             width: 100%;
             height: auto;
             margin-bottom: 25px;
@@ -173,7 +172,7 @@
         #leaderboard-box {
             width: 100%;
             max-width: 900px;
-            background: #141419; /* Darkened leaderboard background */
+            background: #141419; 
             margin-top: 25px;
             padding: 20px 25px;
             border-radius: 16px;
@@ -225,7 +224,7 @@
         <canvas id="gameCanvas" width="900" height="550"></canvas>
 
         <div class="modal active" id="modal-start" style="text-align: center;">
-            <img class="brand-logo" src="./lumaflex-logo.png" alt="LumaFlex Logo Placeholder">
+            <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
             <h2>Cellular Guardian</h2>
             <p style="text-align: center;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
             <span style="color: var(--nutrient-green); font-weight: bold;">CRITICAL WARNING:</span> Avoid green Nutrients! Zapping healthy items damages your cell tissue (-15% Health).</p>
@@ -245,7 +244,7 @@
         </div>
 
         <div class="modal" id="modal-victory" style="text-align: center;">
-            <img class="brand-logo" src="./lumaflex-logo.png" alt="LumaFlex Logo Placeholder">
+            <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
             <h2>Total Cellular Wellness Achieved!</h2>
             <p style="text-align: center;">Master your recovery at home. Your speed, tactical accuracy, and precision metrics have peaked.</p>
             <div id="score-input-zone">
@@ -253,7 +252,10 @@
                 <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
                 <br>
             </div>
-            <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop LumaFlex (15% Off)</a>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop Lumaflex</a>
+                <button class="btn" style="background: #5c6b73;" onclick="gameEngine.restartGameFromVictory()">Play Again</button>
+            </div>
         </div>
     </div>
 
@@ -647,12 +649,34 @@ class GameEngine {
 
             this.ctx.fillStyle = e.isStressor ? "#4a5568" : "#1b4332";
             
-            // Increased text scaling factor multiplier below to make bubbles much larger and clearer
-            let fontMetric = Math.max(13, Math.floor((e.r * 3.1) / e.name.length));
-            this.ctx.font = `700 ${fontMetric}px sans-serif`;
+            // NEW: Split names into words and dynamically wrap them vertically into lines inside bubble boundaries
+            let words = e.name.split(" ");
+            let lines = [];
+            let currentLine = words[0];
+
+            for (let k = 1; k < words.length; k++) {
+                // If single string phrase is very long, force a split layout
+                if (currentLine.length + words[k].length > 9) {
+                    lines.push(currentLine);
+                    currentLine = words[k];
+                } else {
+                    currentLine += " " + words[k];
+                }
+            }
+            lines.push(currentLine);
+
+            // Dynamic safe font sizing calculations based on total lines rendered
+            let fontSize = lines.length > 1 ? 13 : 15;
+            this.ctx.font = `700 ${fontSize}px sans-serif`;
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText(e.name, e.x, e.y);
+
+            let lineHeight = fontSize + 3;
+            let startY = e.y - ((lines.length - 1) * lineHeight) / 2;
+
+            lines.forEach((line, index) => {
+                this.ctx.fillText(line, e.x, startY + (index * lineHeight));
+            });
         });
 
         this.particles.forEach(p => {
@@ -717,6 +741,17 @@ class GameEngine {
 
     restartGame() {
         document.getElementById('modal-gameover').classList.remove('active');
+        this.initGame();
+    }
+
+    restartGameFromVictory() {
+        document.getElementById('modal-victory').classList.remove('active');
+        // Reset input fields cleanly
+        document.getElementById('score-input-zone').innerHTML = `
+            <input type="text" id="player-name" placeholder="Enter your initials (e.g. ABC)" maxlength="10"><br>
+            <button class="btn" style="margin-bottom: 20px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
+            <br>
+        `;
         this.initGame();
     }
 
