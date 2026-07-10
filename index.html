@@ -120,19 +120,19 @@
             background: rgba(255, 255, 255, 0.97);
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; /* Changed from center to allow natural scrolling top-to-bottom */
+            justify-content: flex-start; /* Changed to flex-start so content starts at top and scrolls naturally */
             align-items: center;
-            padding: 20px;
+            padding: 30px 40px;
             text-align: center;
             z-index: 20;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.3s ease;
             color: var(--text-dark);
-    
-            /* Crucial Mobile Scrolling Fixes */
+            
+            /* Enable scrolling inside modals when text overflows */
             overflow-y: auto; 
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling for iOS devices *
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal.active {
@@ -142,31 +142,26 @@
 
         .modal h2 {
             font-size: 1.8rem;
-            margin-bottom: 8px;
+            margin-top: 10px;
+            margin-bottom: 12px;
             color: var(--text-dark);
             line-height: 1.2;
         }
 
         .modal p {
             font-size: 0.95rem;
-            line-height: 1.4;
+            line-height: 1.5;
             max-width: 720px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             color: #5c6b73;
             text-align: left;
-        }
-
-        @media (max-width: 580px) {
-            .modal { padding: 15px; }
-            .modal h2 { font-size: 1.3rem; }
-            .modal p { font-size: 0.8rem; margin-bottom: 10px; }
-            .brand-logo { max-width: 180px !important; }
         }
 
         .brand-logo {
             max-width: 300px; 
             width: 80%;
             height: auto;
+            margin-top: 10px;
             margin-bottom: 12px;
             object-fit: contain;
         }
@@ -184,6 +179,8 @@
             box-shadow: 0 4px 15px rgba(255, 59, 48, 0.3);
             transition: transform 0.2s ease, background 0.2s ease;
             text-align: center;
+            display: inline-block;
+            margin-bottom: 20px; /* Keep spacing underneath click actions */
         }
 
         .btn:hover {
@@ -232,19 +229,30 @@
             width: 250px;
             text-align: center;
         }
-            @media (max-width: 600px) {
-            .modal h2 {
-                font-size: 1.4rem !important;
-                margin-bottom: 10px !important;
+
+        /* --- MOBILE TEXT & MODAL TWEAKS --- */
+        @media (max-width: 600px) {
+            .modal { 
+                padding: 15px; 
             }
-            .modal p {
-                font-size: 0.85rem !important;
-                line-height: 1.3 !important;
-                margin-bottom: 12px !important;
+            .modal h2 { 
+                font-size: 1.3rem !important; 
+                margin-top: 5px !important;
+                margin-bottom: 8px !important;
+            }
+            .modal p { 
+                font-size: 0.8rem !important; 
+                line-height: 1.35 !important;
+                margin-bottom: 12px !important; 
+            }
+            .brand-logo { 
+                max-width: 180px !important; 
+                margin-top: 5px !important;
             }
             .btn {
-                padding: 10px 20px !important;
+                padding: 10px 22px !important;
                 font-size: 0.85rem !important;
+                margin-bottom: 15px !important;
             }
         }
     </style>
@@ -264,7 +272,7 @@
         <div class="modal active" id="modal-start" style="text-align: center;">
             <img class="brand-logo" src="./lumaflex-logo.svg" alt="LumaFlex Logo Placeholder">
             <h2>Cellular Guardian</h2>
-            <p style="text-align: center; margin-top: 5px;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your LumaFlex Laser Beam. <br>
+            <p style="text-align: center; margin-top: 5px;"><strong>INSTRUCTIONS:</strong> Destroy incoming grey Stressors with your Lumaflex Laser Beam. <br><br>
             <span style="color: var(--nutrient-green); font-weight: bold;">CRITICAL WARNING:</span> Avoid green Nutrients! Zapping healthy items damages your cell tissue (-15% Health).</p>
             <button class="btn" onclick="gameEngine.initGame()">Initialize Lumaflex</button>
         </div>
@@ -290,7 +298,7 @@
                 <button class="btn" style="margin-bottom: 16px; background:#2c3e50;" onclick="gameEngine.submitScore()">Save Score Rank</button>
                 <br>
             </div>
-            <div style="display: flex; gap: 15px; justify-content: center; width: 100%;">
+            <div style="display: flex; gap: 15px; justify-content: center; width: 100%; padding-bottom: 20px;">
                 <a href="https://www.lumaflex.com/shop" target="_blank" class="btn">Shop Lumaflex</a>
                 <button class="btn" style="background: #5c6b73;" onclick="gameEngine.restartGameFromVictory()">Play Again</button>
             </div>
@@ -299,8 +307,7 @@
 
     <div id="leaderboard-box">
         <h3>Top 5 Cellular Guardians</h3>
-        <div id="leaderboard-list">
-            </div>
+        <div id="leaderboard-list"></div>
     </div>
 
 <script>
@@ -519,7 +526,6 @@ class GameEngine {
         const rect = this.canvas.getBoundingClientRect();
         const touch = e.touches[0];
         
-        // Map responsive CSS bounding sizes dynamically back into the static grid scale logic
         const scaleX = this.canvas.width / rect.width;
         const scaleY = this.canvas.height / rect.height;
 
@@ -538,7 +544,6 @@ class GameEngine {
     }
 
     initListeners() {
-        // Desktop Pointer Listeners
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
             const scaleX = this.canvas.width / rect.width;
@@ -568,7 +573,6 @@ class GameEngine {
             if(this.isRunning) this.totalClicks++;
         });
 
-        // Mobile Unified Pointer Input Setup
         this.canvas.addEventListener('touchstart', (e) => {
             if(this.isRunning) this.totalClicks++;
             this.handleTouchInput(e);
@@ -833,6 +837,8 @@ class GameEngine {
             });
         });
 
+        this.canvas.style.cursor = 'none';
+
         this.particles.forEach(p => {
             this.ctx.beginPath();
             this.ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
@@ -863,6 +869,7 @@ class GameEngine {
         const lvl = LUMAFLEX_LEVELS[this.currentLevelIdx];
         document.getElementById('bridge-title').innerText = `Level ${lvl.level} Complete`;
         
+        // Ensure proper layout conversion on line breaks
         document.getElementById('bridge-text').innerHTML = lvl.bridge.replace(/\n\n/g, '<br><br>');
         document.getElementById('bridge-link').href = lvl.link;
         
@@ -879,7 +886,11 @@ class GameEngine {
                 this.nextLevel();
             };
         }
-        document.getElementById('modal-bridge').classList.add('active');
+        
+        // Reset the vertical scroll coordinate of the modal block to zero upon reveal
+        const mBridge = document.getElementById('modal-bridge');
+        mBridge.scrollTop = 0;
+        mBridge.classList.add('active');
     }
 
     nextLevel() {
@@ -892,7 +903,9 @@ class GameEngine {
         this.isRunning = false;
         sfx.setHumActive(false);
         sfx.stopMusic();
-        document.getElementById('modal-gameover').classList.add('active');
+        const mOver = document.getElementById('modal-gameover');
+        mOver.scrollTop = 0;
+        mOver.classList.add('active');
     }
 
     restartGame() {
@@ -913,7 +926,9 @@ class GameEngine {
     triggerUltimateVictory() {
         document.getElementById('modal-bridge').classList.remove('active');
         sfx.stopMusic();
-        document.getElementById('modal-victory').classList.add('active');
+        const mVic = document.getElementById('modal-victory');
+        mVic.scrollTop = 0;
+        mVic.classList.add('active');
     }
 
     calculateFinalScore() {
