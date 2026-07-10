@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Lumaflex: Cellular Guardian</title>
     <style>
         :root {
@@ -18,6 +18,8 @@
             margin: 0;
             padding: 0;
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         body {
@@ -29,6 +31,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            padding: 10px;
         }
 
         /* Top Bar Dashboard */
@@ -41,12 +44,11 @@
             padding: 15px 25px;
             background: rgba(20, 20, 25, 0.85); 
             backdrop-filter: blur(10px);
-            border-radius: 0 0 16px 16px;
+            border-radius: 16px;
             box-shadow: var(--shadow);
             z-index: 10;
             margin-bottom: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-top: none;
         }
 
         .db-segment {
@@ -54,6 +56,15 @@
             font-size: 1rem;
             letter-spacing: 0.5px;
             color: #ffffff;
+        }
+
+        @media (max-width: 480px) {
+            .db-segment {
+                font-size: 0.8rem;
+            }
+            #dashboard {
+                padding: 10px 15px;
+            }
         }
 
         #health-display {
@@ -66,18 +77,18 @@
             position: relative;
             width: 100%;
             max-width: 900px;
-            height: 550px;
+            aspect-ratio: 900 / 550;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: var(--shadow);
             background: #fff;
+            touch-action: none;
         }
 
         canvas {
             display: block;
             width: 100%;
             height: 100%;
-            cursor: none; 
         }
 
         /* UI Audio Control Overlay */
@@ -140,6 +151,13 @@
             margin-bottom: 16px;
             color: #5c6b73;
             text-align: left;
+        }
+
+        @media (max-width: 580px) {
+            .modal { padding: 15px; }
+            .modal h2 { font-size: 1.3rem; }
+            .modal p { font-size: 0.8rem; margin-bottom: 10px; }
+            .brand-logo { max-width: 180px !important; }
         }
 
         .brand-logo {
@@ -316,14 +334,12 @@ class AudioEngine {
         this.humOsc = null;
         this.humGain = null;
         
-        // Music State Trackers
         this.musicInterval = null;
         this.musicGain = null;
         this.tempoBPM = 130;
         this.stepIndex = 0;
         this.isMusicPlaying = false;
         
-        // Cyberpunk Synth Bassline progression (frequencies matching deep a-minor chords)
         this.bassSequence = [
             110.00, 110.00, 130.81, 110.00, 
             146.83, 146.83, 164.81, 130.81,
@@ -360,13 +376,12 @@ class AudioEngine {
         this.humGain.gain.linearRampToValueAtTime(active ? 0.12 : 0, this.ctx.currentTime + 0.1);
     }
 
-    // Dynamic 8-Bit Looper Engine
     startMusic() {
         if (!this.ctx || this.isMusicPlaying || this.muted) return;
         this.isMusicPlaying = true;
-        this.musicGain.gain.linearRampToValueAtTime(0.06, this.ctx.currentTime + 0.5); // Safe soft master mix volume
+        this.musicGain.gain.linearRampToValueAtTime(0.06, this.ctx.currentTime + 0.5);
 
-        const stepDuration = 60 / this.tempoBPM / 2; // Eighth note timing
+        const stepDuration = 60 / this.tempoBPM / 2;
         
         this.musicInterval = setInterval(() => {
             if (this.muted || !this.ctx) return;
@@ -374,14 +389,12 @@ class AudioEngine {
             let now = this.ctx.currentTime;
             let noteFreq = this.bassSequence[this.stepIndex % this.bassSequence.length];
             
-            // Generate deep saw oscillator per note block step
             let osc = this.ctx.createOscillator();
             let noteGain = this.ctx.createGain();
             
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(noteFreq / 2, now); // Shifted an octave down for intense retro weight
+            osc.frequency.setValueAtTime(noteFreq / 2, now);
             
-            // Fast rhythmic gate articulation envelope
             noteGain.gain.setValueAtTime(0.7, now);
             noteGain.gain.exponentialRampToValueAtTime(0.01, now + stepDuration - 0.02);
             
@@ -482,11 +495,40 @@ class GameEngine {
         this.renderLeaderboard();
     }
 
+    handleTouchInput(e) {
+        if (!this.isRunning) return;
+        e.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        
+        // Map responsive CSS bounding sizes dynamically back into the static grid scale logic
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        this.mouse.x = (touch.clientX - rect.left) * scaleX;
+        this.mouse.y = (touch.clientY - rect.top) * scaleY;
+
+        if(!this.mouse.active) {
+            this.mouse.active = true;
+            sfx.setHumActive(true);
+        }
+        
+        this.particles.push({
+            x: this.mouse.x, y: this.mouse.y,
+            r: Math.random() * 4 + 2, alpha: 1.0, life: 500
+        });
+    }
+
     initListeners() {
+        // Desktop Pointer Listeners
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            this.mouse.x = e.clientX - rect.left;
-            this.mouse.y = e.clientY - rect.top;
+            const scaleX = this.canvas.width / rect.width;
+            const scaleY = this.canvas.height / rect.height;
+            
+            this.mouse.x = (e.clientX - rect.left) * scaleX;
+            this.mouse.y = (e.clientY - rect.top) * scaleY;
+            
             if(!this.mouse.active && this.isRunning) {
                 this.mouse.active = true;
                 sfx.setHumActive(true);
@@ -506,6 +548,21 @@ class GameEngine {
 
         this.canvas.addEventListener('mousedown', () => {
             if(this.isRunning) this.totalClicks++;
+        });
+
+        // Mobile Unified Pointer Input Setup
+        this.canvas.addEventListener('touchstart', (e) => {
+            if(this.isRunning) this.totalClicks++;
+            this.handleTouchInput(e);
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchmove', (e) => {
+            this.handleTouchInput(e);
+        }, { passive: false });
+
+        this.canvas.addEventListener('touchend', () => {
+            this.mouse.active = false;
+            sfx.setHumActive(false);
         });
 
         document.getElementById('audio-toggle').addEventListener('click', (e) => {
@@ -543,7 +600,7 @@ class GameEngine {
         document.getElementById('neutralized-display').innerText = "0/10";
         
         this.isRunning = true;
-        sfx.startMusic(); // Engages synth loop
+        sfx.startMusic();
         this.gameLoop();
     }
 
@@ -782,7 +839,7 @@ class GameEngine {
     triggerLevelClear() {
         this.isRunning = false;
         sfx.setHumActive(false);
-        sfx.stopMusic(); // Clear stream pipeline volume
+        sfx.stopMusic();
         sfx.playVictory();
 
         const lvl = LUMAFLEX_LEVELS[this.currentLevelIdx];
@@ -868,7 +925,7 @@ class GameEngine {
     renderLeaderboard() {
         const listContainer = document.getElementById('leaderboard-list');
         const scores = JSON.parse(localStorage.getItem('lumaflex_scores')) || [
-            { name: "MitoMaster", score: 1250 },
+            { name: "RedLightMaster", score: 1250 },
             { name: "LaserGuard", score: 980 },
             { name: "CellShield", score: 710 }
         ];
